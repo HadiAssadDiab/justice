@@ -134,6 +134,65 @@ describe("rich inline runs", () => {
     expect(visible(p, solve(p, 1000).lines[0])).toBe("ábc 10\u00a0km 👩‍💻");
   });
 
+  it("matches Unicode segmentation for every ASCII character and fragment", () => {
+    const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+    const text = Array.from({ length: 128 }, (_, code) => String.fromCharCode(code))
+      .filter(char => !" \t\r\n\f".includes(char)).map(char => `a${char}z`).join(" ");
+    const p = prepareRich([run(text)], width, { space: 4, hyphenate: word => [...word] });
+    for (const [index, word] of p.words.entries()) {
+      expect(p.characters[index + 1] - p.characters[index]).toBe([...segmenter.segment(word)].length);
+      const fragments = p.hyphenation![index]!, offsets = fragments.offsets, n = offsets.length;
+      for (let from = 0; from < n - 1; from++) for (let to = from + 1; to < n; to++) {
+        expect(fragments.characters[from * n + to]).toBe([...segmenter.segment(word.slice(offsets[from], offsets[to]))].length);
+      }
+    }
+  });
+
+  it("retains exact Unicode fragment counts when repeated words use different marks", () => {
+    const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+    const words = ["cafédéjà", "🇩🇰🇨🇦🇺🇸", "👩‍💻ábcdef", "क्षिक्षि", "각나", "\u0600ab", "́abc", "Ångström"];
+    const p = prepareRich([normal, bold, italicLink].flatMap(marks =>
+      words.flatMap(text => [run(text.slice(0, 1), marks), run(text.slice(1) + " ", marks)])), width, {
+      space: 4, hyphenate: word => [...segmenter.segment(word)].map(part => part.segment),
+    });
+    for (const [index, word] of p.words.entries()) {
+      expect(p.characters[index + 1] - p.characters[index]).toBe([...segmenter.segment(word)].length);
+      const fragments = p.hyphenation?.[index];
+      if (!fragments) continue;
+      const offsets = fragments.offsets, n = offsets.length;
+      for (let from = 0; from < n - 1; from++) for (let to = from + 1; to < n; to++) {
+        expect(fragments.characters[from * n + to]).toBe([...segmenter.segment(word.slice(offsets[from], offsets[to]))].length);
+      }
+    }
+  });
+
+  it("returns independently owned line output without mutating prepared source runs", () => {
+    const p = prepareRich([run("co"), run("operate ", bold), run("again", italicLink)], width, { space: 4 });
+    const line = solve(p, 1000).lines[0], first = lineRuns(p, line), second = lineRuns(p, line);
+    first[0].runs[0].text = "changed";
+    first[0].runs.push(run("extra"));
+    first[1].runs[0].text = "changed gap";
+    first.pop();
+    expect(lineRuns(p, line)).toEqual(second);
+    expect(p.words).toEqual(["cooperate", "again"]);
+    expect(p.wordRuns[0]).toEqual([run("co"), run("operate", bold)]);
+    expect(p.spaceRuns).toEqual([run(" ", bold)]);
+  });
+
+  it("still calls index-sensitive hyphenation for every occurrence of a cached word", () => {
+    const seen: number[] = [];
+    const p = prepareRich([run("abcdef abcdef abcdef")], width, {
+      space: 4,
+      hyphenate: (word, index) => {
+        seen.push(index);
+        return index === 0 ? ["ab", "cdef"] : index === 1 ? ["abc", "def"] : [word];
+      },
+    });
+    expect(seen).toEqual([0, 1, 2]);
+    expect(Array.from(p.hyphenation!, part => part?.offsets)).toEqual([[0, 2, 6], [0, 3, 6], undefined]);
+    expect(p.hyphenation![0]!.widths).not.toBe(p.hyphenation![1]!.widths);
+  });
+
   it("agrees with plain preparation, solving, and static compilation for equivalent shaping", () => {
     const text = "“Fine,” well-known words make a paragraph. Keep every source word intact.";
     const source = Array.from(text, character => run(character));

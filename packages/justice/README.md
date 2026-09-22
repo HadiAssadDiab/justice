@@ -51,7 +51,7 @@ const prepared = prepareRich([
 for (const line of solve(prepared, 620).lines) {
   for (const piece of lineRuns(prepared, line)) {
     // piece.kind is "word" or "space"; piece.runs retains the original marks.
-    // Render a word's runs together inside one inline-block, with inline tags.
+    // Shape each word's runs together, using inline text and inline tags.
     // Render a space at this explicit width, regardless of its marks' font:
     const gap = prepared.space + line.wordSpacing + line.tracking
     renderPiece(piece, { gap, letterSpacing: line.tracking })
@@ -73,8 +73,8 @@ must occupy `prepared.space + line.wordSpacing + line.tracking` pixels. Applying
 CSS `word-spacing` to native mixed-font spaces alone is insufficient. Word pieces
 use `letter-spacing: line.tracking`; keep their child marks inline so shaping is
 consistent with measurement. NBSP remains inside its original word, and must not
-receive interword spacing. This contract lets rich input use the unchanged
-numerical solver, including its pruning and constant-time prefix sums.
+receive interword spacing. This contract lets rich input share the numerical
+solver, including its pruning and constant-time prefix sums.
 
 ASCII whitespace collapses across run boundaries. The first whitespace in a
 collapsed group supplies that gap's marks; paragraph-edge ASCII whitespace is
@@ -83,6 +83,13 @@ fresh run wrappers while preserving the original mark identities, including on
 partial words. Arbitrary text remains text: render via text nodes or a framework's
 escaped text output. Mark interpretation, URL handling, link keyboard behavior,
 line height, and DOM integration belong to the renderer.
+
+The browser example keeps the source tag stack open across visual lines. One
+source link stays one anchor, including links that start inside a word. Native
+CSS handles hover, underline, and one keyboard focus stop per link. Inline text
+spans carry each line's tracking; space spans use the measured paragraph font
+and adjust word spacing to provide the exact gap advance. Presentation-only newlines and inserted hyphens are
+hidden from accessibility, and the copy handler restores source text.
 
 For dictionary hyphenation, pass `hyphenate(word, index)` in `prepareRich`'s options
 rather than calling `withHyphenation` afterwards. It must partition the word into
@@ -154,8 +161,10 @@ an adapter can use the corresponding word's font. It measures complete shaped
 fragments **including their hyphen**, rather than adding isolated glyph widths.
 
 Whole-word and discretionary breaks compete in the same fitting pass. The
-optional path searches the expanded break graph without overflow pruning;
-paragraphs with no discretionary breaks retain the pruned whole-word path.
+optional path prunes at whole-word boundaries when every added suffix and gap
+has nonnegative width after maximum compression. The bound includes the largest
+possible leading optical allowance. Unusual metrics that fail these guards use
+full search; paragraphs without discretionary breaks retain the whole-word path.
 Costs discourage hyphens, consecutive hyphenated lines, and a hyphen before the
 final line. Prepared fragment measurements are reused across solves.
 

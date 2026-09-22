@@ -8,7 +8,11 @@
   mark identity. Interword gaps use an explicit uniform advance.
 - Add a browser example with links and nested formatting, rich-text regression
   tests, and repeatable preparation/rendering benchmarks and bundle-size reports.
-  The numerical engine, static compiler, and runtime dependencies are unchanged.
+- Keep one native anchor per source link across visual lines in the browser
+  example; remove synchronized hover handlers and underline workarounds.
+- Speed up ASCII grapheme counting and prune impossible hyphenated line
+  candidates, preserving Unicode validation and the selected optimal layout.
+  No runtime dependencies were added.
 
 ## 0.3.1
 

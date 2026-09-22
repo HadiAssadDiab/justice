@@ -58,8 +58,8 @@ export function prepareRich<T>(runs: readonly RichRun<T>[], measure: (runs: read
   if (!Number.isFinite(space) || space <= 0) throw new RangeError("Space width must be positive");
   const wordRuns: RichRun<T>[][] = [], spaceRuns: RichRun<T>[] = [];
   let current: RichRun<T>[] = [], pending: RichRun<T> | undefined;
-  for (const run of runs) for (const part of run.text.matchAll(/[ \t\r\n\f]+|[^ \t\r\n\f]+/g)) {
-    const text = part[0];
+  for (const run of runs) for (const text of run.text.split(/([ \t\r\n\f]+)/)) {
+    if (!text) continue;
     if (/^[ \t\r\n\f]/.test(text)) {
       if (current.length) { wordRuns.push(current); current = []; }
       if (wordRuns.length) pending ??= { text: " ", marks: run.marks };
@@ -75,6 +75,18 @@ export function prepareRich<T>(runs: readonly RichRun<T>[], measure: (runs: read
   // Length-prefixed keys preserve arbitrary text and mark identity without
   // serializing caller metadata. Caches are released after preparation.
   const identities = new Map<T, number>(), cache = new Map<string, number>();
+  const counts = new Map<string, number>();
+  const count = (text: string) => {
+    // ASCII words cannot contain CRLF (whitespace is already split).
+    if (!/[^\x00-\x7f]/.test(text)) return text.length;
+    let value = counts.get(text);
+    if (value === undefined) {
+      value = 0;
+      for (const _ of graphemes.segment(text)) value++;
+      counts.set(text, value);
+    }
+    return value;
+  };
   const widthOf = (runs: readonly RichRun<T>[]) => {
     let key = "";
     for (const run of runs) {
@@ -93,9 +105,9 @@ export function prepareRich<T>(runs: readonly RichRun<T>[], measure: (runs: read
   let hyphenation: (WordFragments | undefined)[] | undefined;
   for (let i = 0; i < words.length; i++) {
     const word = words[i], runs = wordRuns[i], width = widthOf(runs);
-    const boundaries = [...graphemes.segment(word)];
+    const charactersInWord = count(word);
     widths[i + 1] = widths[i] + width;
-    characters[i + 1] = characters[i] + boundaries.length;
+    characters[i + 1] = characters[i] + charactersInWord;
     const punctuation = word.match(/[.,;:!?…’”'"]+$/u)?.[0];
     if (punctuation) endHangs[i] = Math.min(width, widthOf(slice(runs, word.length - punctuation.length, word.length)));
     const quote = word.match(/^[“‘"'«‹]/u)?.[0];
@@ -108,11 +120,11 @@ export function prepareRich<T>(runs: readonly RichRun<T>[], measure: (runs: read
     if (hyphenate) {
       const parts = hyphenate(word, i);
       if (!parts.length || parts.some(part => !part.length) || parts.join("") !== word) throw new RangeError("Hyphenation must partition the source word");
-      const legal = new Set(boundaries.map(part => part.index));
+      const legal = charactersInWord === word.length ? undefined : new Set([...graphemes.segment(word)].map(part => part.index));
       let offset = 0;
       for (const part of parts.slice(0, -1)) {
         offset += part.length;
-        if (!legal.has(offset)) throw new RangeError("Hyphenation must not split a grapheme");
+        if (legal && !legal.has(offset)) throw new RangeError("Hyphenation must not split a grapheme");
         offsets.add(offset);
       }
     }
@@ -124,7 +136,7 @@ export function prepareRich<T>(runs: readonly RichRun<T>[], measure: (runs: read
       const start = sorted[from], end = sorted[to], cell = from * n + to;
       measured[cell] = from === 0 && to === n - 1 ? width : widthOf(slice(runs, start, end));
       if (to < n - 1) hyphens[cell] = explicit[to] ? measured[cell] : widthOf(slice(runs, start, end, true));
-      chars[cell] = [...graphemes.segment(word.slice(start, end))].length;
+      chars[cell] = charactersInWord === word.length ? end - start : count(word.slice(start, end));
     }
     hyphenation ??= new Array(words.length);
     hyphenation[i] = { offsets: sorted, widths: measured, hyphenWidths: hyphens, characters: chars, explicit: explicit.some(Boolean) ? explicit : undefined };

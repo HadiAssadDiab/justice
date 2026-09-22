@@ -1,4 +1,8 @@
-# Rich text: size and performance review
+# Rich text: initial size and performance review
+
+This report records the initial rich-text implementation through commit
+`f4219c3`. For the subsequent native-link renderer and core/preparation
+optimizations, see [the follow-up performance review](performance-review.md).
 
 The optional `@kitlangton/justice/rich` entry adds marked inline runs while
 leaving the existing plain-text solver and static compiler unchanged. The
