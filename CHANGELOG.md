@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Add the opt-in `@kitlangton/justice/rich` entry with `prepareRich` and `lineRuns`.
+  Preserve opaque inline marks through whole-word and hyphenated line breaks,
+  measure complete styled fragments, and cache repeated measurements by text and
+  mark identity. Interword gaps use an explicit uniform advance.
+- Add a browser example with links and nested formatting, rich-text regression
+  tests, and repeatable preparation/rendering benchmarks and bundle-size reports.
+  The numerical engine, static compiler, and runtime dependencies are unchanged.
+
 ## 0.3.1
 
 - License the package under MIT and include the license in the published tarball.

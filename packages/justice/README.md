@@ -30,6 +30,86 @@ optical allowances, residuals, costs, and a candidate count. Positive residuals
 are underfilled; negative residuals are overfull. `defaults` and the `Options`,
 `Measure`, `Prepared`, `Line`, and `Layout` types are exported.
 
+## Rich inline text (optional)
+
+```ts
+import { solve } from "@kitlangton/justice"
+import { prepareRich, lineRuns } from "@kitlangton/justice/rich"
+
+// Marks are your own metadata, including nested formatting and link attributes.
+// Reuse identities for repeated styles so measurements can be shared.
+const normal = { tags: [] }
+const strong = { tags: ["strong"] }
+const link = { tags: ["a", "em"], href: "/guide" }
+const prepared = prepareRich([
+  { text: "Read the ", marks: normal },
+  { text: "com", marks: strong },
+  { text: "plete", marks: link }, // still one word: "complete"
+  { text: " guide.", marks: link },
+], measureStyledWord, { space: 4 })
+
+for (const line of solve(prepared, 620).lines) {
+  for (const piece of lineRuns(prepared, line)) {
+    // piece.kind is "word" or "space"; piece.runs retains the original marks.
+    // Render a word's runs together inside one inline-block, with inline tags.
+    // Render a space at this explicit width, regardless of its marks' font:
+    const gap = prepared.space + line.wordSpacing + line.tracking
+    renderPiece(piece, { gap, letterSpacing: line.tracking })
+  }
+  // Each line also needs nowrap and its negative line.opening offset.
+}
+```
+
+`measureStyledWord(runs)` receives a **complete shaped word or fragment**. Render
+its runs with the same inline tags, fonts, kerning, and ligatures as the output
+and return its advance in pixels, before Justice's tracking adjustment. Do not
+sum independently measured runs: formatting or semantic boundaries inside a
+word can affect shaping. Finite nonnegative advances are required. The adapter
+has no DOM dependency, HTML parser, Markdown parser, fonts, or dictionaries.
+
+**Uniform gaps are part of this API's rendering contract.** `options.space` is
+a required positive pixel advance shared by all interword gaps. A space piece
+must occupy `prepared.space + line.wordSpacing + line.tracking` pixels. Applying
+CSS `word-spacing` to native mixed-font spaces alone is insufficient. Word pieces
+use `letter-spacing: line.tracking`; keep their child marks inline so shaping is
+consistent with measurement. NBSP remains inside its original word, and must not
+receive interword spacing. This contract lets rich input use the unchanged
+numerical solver, including its pruning and constant-time prefix sums.
+
+ASCII whitespace collapses across run boundaries. The first whitespace in a
+collapsed group supplies that gap's marks; paragraph-edge ASCII whitespace is
+removed. A formatting boundary never creates a word break. `lineRuns` returns
+fresh run wrappers while preserving the original mark identities, including on
+partial words. Arbitrary text remains text: render via text nodes or a framework's
+escaped text output. Mark interpretation, URL handling, link keyboard behavior,
+line height, and DOM integration belong to the renderer.
+
+For dictionary hyphenation, pass `hyphenate(word, index)` in `prepareRich`'s options
+rather than calling `withHyphenation` afterwards. It must partition the word into
+nonempty strings at grapheme boundaries. Source hyphens are retained alongside
+dictionary breaks. Every potential fragment is measured using its exact source
+offsets and marks. A generated hyphen is a separate final run with
+`generated: true` and the preceding character's marks, and is included in the
+complete shaped measurement. Keep it out of narration and clipboard source text.
+Source runs should not set `generated`; it is output metadata.
+
+`RichPrepared` also works with `compileStatic` and `staticSpacing`. Render each
+band's `lineRuns(prepared, staticLine.line)` with the usual `--j-t`, `--j-gap`, and
+`--j-left` properties. The adapter measures styled opening quotes and trailing
+punctuation. Additional font-specific optical-margin integration belongs to the
+caller.
+
+Prepare once after fonts are ready; reuse across width and policy changes.
+`solve` and `lineRuns` never call the measurer. Text-plus-mark-identity caches are
+local to preparation and then released. Keep marks and measurements stable;
+prepare again when text, fonts, styles, or the base space advance change. Browser
+measurers should batch their DOM writes and reads; see the complete example in
+[`site/src/rich.ts`](../../site/src/rich.ts) (`bun run site`, then `/rich.html`).
+
+The rich entry is opt-in and adds no bytes to the plain-text entry. It exports
+`prepareRich`, `lineRuns`, and the `RichRun`, `RichPrepared`, `RichOptions`, and
+`RichPiece` types.
+
 ## Per-line measures
 
 ```ts
@@ -177,9 +257,10 @@ Measure and render with the same kerning and ligature settings so the measured
 words compose predictably.
 
 Process paragraphs and explicit hard-break segments separately. Supported input
-is horizontal LTR, single-font, space-delimited plain text, with optional supplied
-hyphenation and supplied glyph-specific optical margins. Rich inline markup and bidi/CJK breaking are
-outside this version's scope.
+is horizontal LTR, space-delimited text. `prepare` handles single-font plain text;
+`prepareRich` handles inline styled runs under its explicit-gap contract above.
+HTML/Markdown parsing, inline images, bidi/CJK breaking, and automatic vertical
+layout are outside this version's scope.
 
 The core can execute during SSR or a Cloudflare build/Worker request when supplied
 matching measurements and a known width. Font measurement, responsive-width
