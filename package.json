@@ -1,0 +1,26 @@
+{
+  "name": "justice",
+  "version": "0.3.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "bench": "bun scripts/bench.ts",
+    "build": "bun scripts/build-package.ts",
+    "check:release": "bun run typecheck && bun run test && bun run build",
+    "site": "bun run --cwd site dev",
+    "site:build": "bun run --cwd site build",
+    "site:deploy": "bun run site:build && bunx wrangler pages deploy site/dist --project-name justice"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  },
+  "workspaces": [
+    "site"
+  ]
+}

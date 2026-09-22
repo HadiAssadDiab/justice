@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.DS_Store
+site/public/llms.txt
+site/public/llms-full.txt
+site/public/docs.md
+site/public/changelog.md
+site/public/types.d.ts
+.wrangler/

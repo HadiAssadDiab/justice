@@ -1,0 +1,21 @@
+{
+  "name": "justice-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "docs": "bun scripts/docs.ts",
+    "predev": "bun scripts/docs.ts",
+    "prebuild": "bun scripts/docs.ts",
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@fontsource-variable/eb-garamond": "^5.3.0",
+    "hyphen": "^1.10.6"
+  },
+  "devDependencies": {
+    "vite": "^7.3.1"
+  }
+}

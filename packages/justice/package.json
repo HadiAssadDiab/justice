@@ -1,0 +1,40 @@
+{
+  "name": "@kitlangton/justice",
+  "version": "0.3.0",
+  "description": "A small, DOM-free paragraph justification engine.",
+  "homepage": "https://justice.kitlangton.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitlangton/justice.git",
+    "directory": "packages/justice"
+  },
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "main": "./dist/engine.js",
+  "types": "./dist/engine.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/engine.d.ts",
+      "import": "./dist/engine.js",
+      "default": "./dist/engine.js"
+    },
+    "./static": {
+      "types": "./dist/static.d.ts",
+      "import": "./dist/static.js",
+      "default": "./dist/static.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "prepack": "bun run ../../scripts/build-package.ts"
+  }
+}
