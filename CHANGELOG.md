@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+- License the package under MIT and include the license in the published tarball.
+
 ## 0.3.0
 
 - `solve` accepts a `Measure`: a single width or one width per line with the

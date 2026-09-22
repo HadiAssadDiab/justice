@@ -96,7 +96,7 @@ token or one-time password is involved. Update the version in
 ```sh
 bun run check:release
 npm pack ./packages/justice --dry-run   # inspect the tarball
-git tag v0.3.0 && git push origin main v0.3.0
+git tag v0.3.1 && git push origin main v0.3.1
 ```
 
 `.github/workflows/release.yml` runs the checks, verifies the tag matches the
