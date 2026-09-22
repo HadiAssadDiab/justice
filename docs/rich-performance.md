@@ -111,6 +111,10 @@ an improvement to the solver.
 - The package accepts caller-owned marks instead of bundling an HTML parser,
   sanitizer, DOM traversal layer, or rendering framework. Links, nested emphasis,
   and other inline metadata therefore need no runtime dependencies.
+- The browser example shares hover state across fragments of the same source
+  link, using mark identity rather than the destination URL. Hover updates only
+  change the affected anchors' classes; they do not measure text or run the solver.
+  This behavior lives in the example and adds no bytes to the published package.
 
 The engine still assumes a single positive interword advance. A rich renderer
 must render explicit gaps at `space + line.wordSpacing + line.tracking`, using
@@ -148,14 +152,19 @@ Checks confirmed nested bold/italic, code, small capitals, underline, mid-word
 marks, link destinations, keyboard focus, and clickable link spaces. Visual
 checks also verified continuous link underlines across the explicit gaps: the
 example draws the rule on each grouped semantic wrapper, rather than each word.
+Hover checks cover the first and last fragments, word gaps, nested bold text,
+pointer exit, and resizing under a stationary pointer. All fragments of one
+source link highlight together; an additional fixture confirms that distinct
+links sharing a URL remain independent.
 Clipboard text matched the source, including NBSP and source hyphens, while generated
 hyphens were excluded. There was no horizontal overflow and no console error or
 warning. The largest measured right-edge error after accounting for punctuation
 hanging was 0.15625 CSS px, within fractional-pixel rounding.
 
 Across 56 width changes per viewport, no measurement-host reads occurred. The
-browser's solve-and-render callback took 1.0 ms median / 1.8 ms p95 at the desktop
-viewport and 0.8 ms / 2.2 ms at the narrower viewport. These timings include DOM
+browser's solve-and-render callback, including rebuilding the hover groups, took
+1.4 ms median / 3.0 ms p95 at the desktop viewport and 0.9 ms / 2.7 ms at the
+narrower viewport. These timings include DOM
 construction but exclude the later browser paint. Initial batched width reads
 for 258 fragments took 1.4 ms; insertion through the first composed DOM took
 6.2 ms, excluding request collection, font loading, and network time. These
