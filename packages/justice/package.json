@@ -1,6 +1,6 @@
 {
   "name": "@kitlangton/justice",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "A small, DOM-free paragraph justification engine.",
   "homepage": "https://justice.kitlangton.com",
   "repository": {

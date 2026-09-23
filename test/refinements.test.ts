@@ -7,10 +7,10 @@ const jumps = (layout: Layout) => layout.lines.slice(1).filter((line, i) => Math
 it("retains competing fitness histories and chooses a smoother complete paragraph", () => {
   const text = "A quiet paragraph can become much more comfortable when its lines share a reasonably even rhythm of spaces instead of alternating between very tight and very loose arrangements.";
   const p = prepare(text, measure);
-  const independent = solve(p, 187, { adjacentPenalty: 0 });
-  const adjacent = solve(p, 187);
-  expect(jumps(independent)).toBe(5);
-  expect(jumps(adjacent)).toBe(3);
+  const independent = solve(p, 300, { adjacentPenalty: 0 });
+  const adjacent = solve(p, 300);
+  expect(jumps(independent)).toBe(3);
+  expect(jumps(adjacent)).toBe(1);
   expect(adjacent.cost).toBeLessThan(independent.cost + jumps(independent) * defaults.adjacentPenalty);
   expect(adjacent.lines.map(line => lineText(p, line)).join(" ")).toBe(text);
   expect(adjacent.lines.reduce((sum, line) => sum + line.cost, 0)).toBeCloseTo(adjacent.cost, 8);

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.2
+
+- Bound emergency-fitting credit by the number of word spaces on each line.
+  Sparse lines with extremely large gaps no longer receive the same credit as
+  densely populated lines just because they share a column width. This changes
+  some balanced-mode line breaks, including the static compiler's output.
+- Add a measured mobile article regression and a narrow-column site example.
+
 ## 0.3.1
 
 - License the package under MIT and include the license in the published tarball.

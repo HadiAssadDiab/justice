@@ -34,7 +34,10 @@ function exhaustive(p: Prepared, measure_: Measure, o: Options, emergency = fals
           residual -= (after - before) * gaps;
         }
       }
-      if (emergency && delta > 0) cost = 1 + 100 * (delta / (capacity + width * o.emergencyStretch)) ** 3;
+      if (emergency && delta > 0) {
+        const extra = Math.min(width * o.emergencyStretch, (end - start - 1) * p.space);
+        cost = 1 + 100 * (delta / Math.max(p.space, capacity + extra)) ** 3;
+      }
       if (o.mode === "balanced" && o.emergencyStretch > 0 && !emergency && (delta > capacity * Math.cbrt(2) + 0.01 || Math.abs(residual) > 0.01)) continue;
       if (delta < 0) cost = 1 + (cost - 1) * o.compressionPenalty;
       if (Math.abs(residual) > 0.01) cost += o.mode === "balanced" && residual < 0

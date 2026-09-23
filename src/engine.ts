@@ -8,7 +8,8 @@ export interface Options {
   tracking: number;
   /** Cost multiplier for tightening a line rather than opening its spacing. */
   compressionPenalty: number;
-  /** Extra scoring flexibility, as a fraction of width, when ordinary fitting fails. */
+  /** Maximum extra scoring flexibility as a fraction of width, capped at one
+   * natural space per gap, when ordinary fitting fails. */
   emergencyStretch: number;
   /** Fraction of trailing punctuation advance allowed beyond the right margin. */
   hanging: number;
@@ -270,8 +271,11 @@ function fit(p: Prepared, start: number, end: number, width: number, o: Options,
   // Price preferred-limit strain, but distinguish a fillable loose line from
   // a real overflow. Otherwise a narrow column can choose protruding words
   // over a feasible line simply because the latter needs wider spaces.
+  // Emergency credit must reflect the spaces that can carry it. A width-only
+  // allowance makes two enormous gaps cheaper than a normally spaced paragraph
+  // with a hyphen. A natural-space floor keeps indivisible lines finite too.
   const strain = emergency && delta > 0
-    ? 100 * cube(delta / (capacity + width * o.emergencyStretch))
+    ? 100 * cube(delta / Math.max(p.space, capacity + Math.min(width * o.emergencyStretch, gaps * p.space)))
     : o.mode === "balanced"
     ? 100 * cube(ratio + Math.abs(residual) / Math.max(capacity, gaps * p.space, p.space))
     : ratio * ratio * ratio * 100;

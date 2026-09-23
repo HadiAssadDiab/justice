@@ -54,6 +54,19 @@ const demos: Demo[] = [
       solve(withHyphenation(p, ctx.hyphenate, ctx.measurer.width), width).lines,
     ],
   },
+  {
+    id: "mobile",
+    label: "Mobile column",
+    text: "OpenCode’s environment (its models, tools, agents, skills, etc.) is assembled by plugins. Much of its default behavior lives in built-in plugins. And you, dear reader, can install additional plugins, write your own, or ask OpenCode to write one for you.",
+    states: ["Ragged", "Whole words", "Hyphenated"],
+    narrow: true,
+    hyphenate: true,
+    frames: (p, width, ctx) => [
+      greedy(p, width, false),
+      solve(p, width).lines,
+      solve(withHyphenation(p, ctx.hyphenate, ctx.measurer.width), width).lines,
+    ],
+  },
 ];
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, html?: string) {
