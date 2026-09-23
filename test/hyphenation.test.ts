@@ -49,7 +49,10 @@ function exhaustive(text: string, width: number, o: Options, emergency = false, 
           residual -= (Math.max(-4 * o.shrink, before + residual / gaps) - before) * gaps;
         }
       }
-      if (emergency && delta > 0) strain = 100 * (delta / (capacity + width * o.emergencyStretch)) ** 3;
+      if (emergency && delta > 0) {
+        const extra = Math.min(width * o.emergencyStretch, gaps * measure(" "));
+        strain = 100 * (delta / Math.max(measure(" "), capacity + extra)) ** 3;
+      }
       if (o.mode === "balanced" && o.emergencyStretch > 0 && !emergency && (delta > capacity * Math.cbrt(2) + 0.01 || Math.abs(residual) > 0.01)) continue;
       let cost = 1 + strain * (delta < 0 ? o.compressionPenalty : 1);
       if (Math.abs(residual) > 0.01) cost += o.mode === "balanced" && residual < 0

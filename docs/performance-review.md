@@ -1,5 +1,9 @@
 # Native links and performance follow-up
 
+Measurements in this report were recorded at `6f314b7`, before merging upstream
+0.3.2's emergency-scoring change. Use that revision to reproduce these historical
+numbers; the new upstream scoring intentionally changes some layouts and costs.
+
 This review compares the local changes with `f4219c3`, the version containing
 rich text and synchronized link-hover handlers. No dependency or public API was
 added. The initial feature's measurements remain in

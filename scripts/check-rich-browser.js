@@ -156,11 +156,14 @@ async (parentPage) => {
       }),
     );
     const gapPoint = await page
-      .locator("#composed a .gap")
+      .locator("#composed a")
       .first()
-      .evaluate((gap) => {
+      .evaluate((anchor) => {
+        // Line-end source separators have zero width; click a visible gap.
+        const gap = [...anchor.querySelectorAll(".gap")].find((gap) => gap.getBoundingClientRect().width > 0);
+        if (!gap) throw new Error("Expected a visible space inside the first link");
         const g = gap.getBoundingClientRect();
-        const r = [...gap.closest("a").getClientRects()].find(
+        const r = [...anchor.getClientRects()].find(
           (r) => r.left <= g.left && r.right >= g.right && r.top <= g.top && r.bottom >= g.top,
         );
         return { x: g.left + g.width / 2, y: r.top + r.height / 2 };

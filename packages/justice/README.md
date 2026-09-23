@@ -185,7 +185,7 @@ solve(prepared, 620, {
   shrink: 0.25,
   tracking: 0.3,            // maximum pixels per grapheme
   compressionPenalty: 2,
-  emergencyStretch: 0.15,  // fallback scoring capacity relative to column width
+  emergencyStretch: 0.15,  // maximum fallback credit relative to column width
   hanging: 1,               // trailing punctuation allowance
   opening: 0.3,             // leading quote allowance
   protrusion: 1,            // strength of supplied font-aware optical margins
@@ -200,6 +200,13 @@ Balanced mode first tries ordinary fitting, then relaxes stretch scoring if
 necessary. Shrink and tracking remain bounded. Naturally fitting final lines
 remain ragged. Opening quotes and trailing punctuation can sit beyond the nominal
 margin by their measured allowances.
+
+Emergency fitting adds scoring credit up to `width * emergencyStretch`, capped
+at one measured natural space per inter-word gap. The scoring denominator is at
+least one natural space, including lines with no gaps. This keeps sparse lines
+with enormous spaces expensive rather than treating the entire column as extra
+spacing capacity. The credit changes which breaks win, not the rendering limits:
+balanced mode can still expand spaces when no better complete layout exists.
 
 The solver retains four line fitness classes (tight, decent, loose,
 very loose) at each break. A jump of more than one class adds `adjacentPenalty`.

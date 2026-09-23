@@ -34,7 +34,10 @@ function exhaustive(p: Prepared, width: readonly number[], measure: (text: strin
       let residual = delta - Math.sign(delta) * ratio * capacity;
       let strain = o.mode === "balanced"
         ? 100 * (ratio + Math.abs(residual) / Math.max(capacity, gaps * p.space, p.space)) ** 3 : ratio ** 3 * 100;
-      if (emergency && delta > 0) strain = 100 * (delta / (capacity + targetWidth * o.emergencyStretch)) ** 3;
+      if (emergency && delta > 0) {
+        const extra = Math.min(targetWidth * o.emergencyStretch, gaps * p.space);
+        strain = 100 * (delta / Math.max(p.space, capacity + extra)) ** 3;
+      }
       if (o.mode === "balanced" && gaps) {
         const spacing = Math.sign(delta) * ratio * p.space * (delta < 0 ? o.shrink : o.stretch);
         residual -= (Math.max(-p.space * o.shrink, spacing + residual / gaps) - spacing) * gaps;
